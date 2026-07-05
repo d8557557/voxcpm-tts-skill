@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Validate SKILL.md exists
+        run: |
+          if [ ! -f SKILL.md ]; then
+            echo "❌ SKILL.md not found!"
+            exit 1
+          fi
+          echo "✅ SKILL.md exists"
+
+      - name: Check SKILL.md frontmatter
+        run: |
+          head -5 SKILL.md | grep -q "^name:" && echo "✅ Has name field" || echo "⚠️  Missing name field"
+          head -5 SKILL.md | grep -q "^description:" && echo "✅ Has description field" || echo "⚠️  Missing description field"
+
+      - name: Validate voxcpm-tts.py
+        run: |
+          if [ -f voxcpm-tts.py ]; then
+            python -m py_compile voxcpm-tts.py && echo "✅ voxcpm-tts.py syntax OK"
+          else
+            echo "❌ voxcpm-tts.py not found!"
+            exit 1
+          fi
+
+      - name: Validate config.json
+        run: |
+          if [ -f config.json ]; then
+            python -c "import json; json.load(open('config.json'))" && echo "✅ config.json is valid JSON"
+          fi
