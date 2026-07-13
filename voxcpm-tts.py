@@ -58,7 +58,7 @@ def list_voices(project_dir: Path) -> None:
         print(f"  {v}  ({size/1024:.0f} KB)")
 
 
-def run_clone(text: str, voice: str, output: str, project_dir: Path, device: str) -> Path:
+def run_clone(text: str, voice: str, output: str, project_dir: Path, device: str, control: str = "") -> Path:
     """執行 clone.py 並回傳輸出檔案路徑。"""
     out_path = Path(output)
     if not out_path.is_absolute():
@@ -73,11 +73,13 @@ def run_clone(text: str, voice: str, output: str, project_dir: Path, device: str
         "--voice", voice,
         "--output", str(out_path),
     ]
+    if control:
+        cmd.extend(["--control", control])
     if device:
         cmd.extend(["--device", device])
 
     env = os.environ.copy()
-    env["HF_HOME"] = env.get("HF_HOME", "D:\\.cache\\huggingface")
+    env["HF_HOME"] = env.get("HF_HOME", r"C:\.cache\huggingface")
 
     print(f"執行：{' '.join(cmd)}")
     result = subprocess.run(cmd, env=env, cwd=project_dir)
@@ -109,7 +111,7 @@ def run_dialogue(voice1: str, voice2: str, output: str, project_dir: Path, devic
         cmd.extend(["--device", device])
 
     env = os.environ.copy()
-    env["HF_HOME"] = env.get("HF_HOME", "D:\\.cache\\huggingface")
+    env["HF_HOME"] = env.get("HF_HOME", r"C:\.cache\huggingface")
 
     print(f"執行：{' '.join(cmd)}")
     result = subprocess.run(cmd, env=env, cwd=project_dir)
@@ -158,7 +160,7 @@ sf.write(r"{out_path}", wav, model.tts_model.sample_rate)
 print(f"已存檔：{out_path}")
 """
     env = os.environ.copy()
-    env["HF_HOME"] = env.get("HF_HOME", "D:\\.cache\\huggingface")
+    env["HF_HOME"] = env.get("HF_HOME", r"C:\.cache\huggingface")
     print(f"Voice Design：用「{description}」的描述來創造聲音")
     result = subprocess.run([str(venv_python), "-c", code], env=env, cwd=project_dir)
     if result.returncode != 0:
@@ -207,6 +209,7 @@ def main() -> None:
     p_clone = sub.add_parser("clone", help="用指定聲音生成語音")
     p_clone.add_argument("text", help="要生成的文字")
     p_clone.add_argument("--voice", "-v", required=True, help="聲音名稱")
+    p_clone.add_argument("--control", "-c", default="", help="情緒/風格控制描述（如：愉快、活潑）")
     p_clone.add_argument("--output", "-o", default="output/cloned_voice.wav", help="輸出檔案路徑")
     p_clone.add_argument("--device", "-d", help="強制指定裝置 (cuda/xpu/cpu)")
 
@@ -237,7 +240,7 @@ def main() -> None:
     if args.action == "list":
         list_voices(project_dir)
     elif args.action == "clone":
-        run_clone(args.text, args.voice, args.output, project_dir, args.device)
+        run_clone(args.text, args.voice, args.output, project_dir, args.device, args.control)
     elif args.action == "dialogue":
         run_dialogue(args.voice1, args.voice2, args.output, project_dir, args.device)
     elif args.action == "design":
